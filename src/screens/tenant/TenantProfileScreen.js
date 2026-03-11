@@ -236,7 +236,7 @@ export default function ProfileScreen({ navigation }) {
             onPress={() => navigation.navigate("PaymentScreen")}
           />
           {/* --------------------------------- */}
-          npx expo install expo-sharing
+
           <View style={styles.listDivider} />
           <MenuListItem icon="bell" title="Notifications" />
         </View>

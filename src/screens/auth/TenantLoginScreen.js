@@ -77,7 +77,7 @@ export default function TenantLoginScreen({ navigation }) {
       if (response.status === 200) {
         alert("Login Successful");
 
-        navigateTo("TenantDashboard");
+        navigateTo("TenantNavigation");
       } else {
         alert(data.error || "Invalid login credentials");
       }
@@ -170,7 +170,7 @@ export default function TenantLoginScreen({ navigation }) {
           <View style={styles.bottomRow}>
             <Text style={styles.bottomText}>Don&apos;t have an account?</Text>
             <TouchableOpacity
-              onPress={() => navigation.navigate("RegisterScreen")}
+              onPress={() => navigation.push("TenantRegisterScreen")}
             >
               <Text style={styles.registerText}> Register</Text>
             </TouchableOpacity>

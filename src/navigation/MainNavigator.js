@@ -3,11 +3,10 @@ import React from "react";
 import OwnerLoginScreen from "../screens/auth/OwnerLoginScreen";
 import OwnerRegistrationScreen from "../screens/auth/OwnerRegistrationScreen";
 import TenantLoginScreen from "../screens/auth/TenantLoginScreen";
-import RegisterScreen from "../screens/auth/TenantRegisterScreen";
+import TenantRegisterScreen from "../screens/auth/TenantRegisterScreen";
 import OwnerNavigation from "./OwnerNavigaton";
+import RoleSection from "./RoleSection";
 import TenantNavigation from "./TenantNavigation";
-
-import RoleScreen from "./RoleScreen";
 
 import TenantHomeScreen from "../screens/tenant/TenantHomeScreen";
 import TenantIssuesScreen from "../screens/tenant/TenantIssuesScreen";
@@ -18,13 +17,15 @@ const Stack = createStackNavigator();
 export default function MainNavigator() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="RoleScreen" component={RoleScreen} />
+      <Stack.Screen name="RoleSection" component={RoleSection} />
 
       <Stack.Screen name="TenantLoginScreen" component={TenantLoginScreen} />
 
       <Stack.Screen name="OwnerLoginScreen" component={OwnerLoginScreen} />
-
-      <Stack.Screen name="RegisterScreen" component={RegisterScreen} />
+      <Stack.Screen
+        name="TenantRegisterScreen"
+        component={TenantRegisterScreen}
+      />
 
       <Stack.Screen
         name="OwnerRegistrationScreen"

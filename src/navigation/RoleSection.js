@@ -136,7 +136,7 @@ export default function App() {
         {showSplash ? (
           <SplashScreen />
         ) : showHome ? (
-          <RoleScreen />
+          <RoleSection />
         ) : (
           <View style={{ flex: 1 }}>
             <StatusBar barStyle="dark-content" />
@@ -322,7 +322,7 @@ export default function App() {
 }
 
 /* ===== HomeScreen Code (from your second code) ===== */
-function RoleScreen() {
+function RoleSection() {
   const navigation = useNavigation();
   const line1Opacity = useSharedValue(0);
   const line2Opacity = useSharedValue(0);
