@@ -1,14 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import IssuesScreen from "../screens/tenant/IssuesScreen";
-import PaymentScreen from "../screens/tenant/PaymentScreen";
-import ProfileScreen from "../screens/tenant/ProfileScreen";
 import TenantHomeScreen from "../screens/tenant/TenantHomeScreen";
+import IssuesScreen from "../screens/tenant/TenantIssuesScreen";
+import PaymentScreen from "../screens/tenant/TenantPaymentScreen";
+import ProfileScreen from "../screens/tenant/TenantProfileScreen";
 import COLORS from "../theme/colors";
 
 const Tab = createBottomTabNavigator();
 
-export default function TenantDashboard() {
+export default function TenantNavigation() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({

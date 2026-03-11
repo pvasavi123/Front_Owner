@@ -1,29 +1,26 @@
 import { createStackNavigator } from "@react-navigation/stack";
 import React from "react";
-
-import LoginScreen from "../screens/auth/LoginScreen";
 import OwnerLoginScreen from "../screens/auth/OwnerLoginScreen";
 import OwnerRegistrationScreen from "../screens/auth/OwnerRegistrationScreen";
-import RegisterScreen from "../screens/auth/RegisterScreen";
+import TenantLoginScreen from "../screens/auth/TenantLoginScreen";
+import RegisterScreen from "../screens/auth/TenantRegisterScreen";
+import OwnerNavigation from "./OwnerNavigaton";
+import TenantNavigation from "./TenantNavigation";
 
-import HomeScreen from "./HomeScreen";
-import OwnerDashboard from "./OwnerDashboard";
-import TenantDashboard from "./TenantDashboard";
+import RoleScreen from "./RoleScreen";
 
-import IssuesScreen from "../screens/tenant/IssuesScreen";
-import PaymentScreen from "../screens/tenant/PaymentScreen";
-import ProfileScreen from "../screens/tenant/ProfileScreen";
 import TenantHomeScreen from "../screens/tenant/TenantHomeScreen";
-
+import TenantIssuesScreen from "../screens/tenant/TenantIssuesScreen";
+import TenantPaymentScreen from "../screens/tenant/TenantPaymentScreen";
+import TenantProfileScreen from "../screens/tenant/TenantProfileScreen";
 const Stack = createStackNavigator();
 
 export default function MainNavigator() {
   return (
-    // <NavigationContainer>
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="HomeScreen" component={HomeScreen} />
+      <Stack.Screen name="RoleScreen" component={RoleScreen} />
 
-      <Stack.Screen name="LoginScreen" component={LoginScreen} />
+      <Stack.Screen name="TenantLoginScreen" component={TenantLoginScreen} />
 
       <Stack.Screen name="OwnerLoginScreen" component={OwnerLoginScreen} />
 
@@ -33,19 +30,17 @@ export default function MainNavigator() {
         name="OwnerRegistrationScreen"
         component={OwnerRegistrationScreen}
       />
+      <Stack.Screen name="OwnerNavigation" component={OwnerNavigation} />
 
-      <Stack.Screen name="OwnerDashboard" component={OwnerDashboard} />
-
-      <Stack.Screen name="TenantDashboard" component={TenantDashboard} />
+      <Stack.Screen name="TenantNavigation" component={TenantNavigation} />
 
       <Stack.Screen name="TenantHomeScreen" component={TenantHomeScreen} />
 
-      <Stack.Screen name="IssuesScreen" component={IssuesScreen} />
+      <Stack.Screen name="IssuesScreen" component={TenantIssuesScreen} />
 
-      <Stack.Screen name="PaymentScreen" component={PaymentScreen} />
+      <Stack.Screen name="PaymentScreen" component={TenantPaymentScreen} />
 
-      <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
+      <Stack.Screen name="ProfileScreen" component={TenantProfileScreen} />
     </Stack.Navigator>
-    // </NavigationContainer>
   );
 }

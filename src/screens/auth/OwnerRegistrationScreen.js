@@ -1,8 +1,10 @@
+import COLORS from "@/src/theme/colors";
 import { FontAwesome, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
 import * as DocumentPicker from "expo-document-picker";
 import * as Location from "expo-location";
 // import { useRouter } from "expo-router";
+import { useNavigation } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -27,7 +29,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import COLORS from "@/src/theme/colors";
 const NAVY = COLORS.PRIMARY;
 const LIGHT_PURPLE = COLORS.PRIMARY_LIGHT;
 const WHITE = COLORS.WHITE;
@@ -518,12 +519,6 @@ export default function OwnerRegistrationScreen() {
       if (validateRequired(form.usage, "Usage")) isValid = false;
     }
 
-    // Validate bank details (common for all)
-    // if (validateBankName(form.bankName)) isValid = false;
-    // if (validateIFSC(form.ifsc)) isValid = false;
-    // if (validateAccountNo(form.accountNo)) isValid = false;
-
-    // Validate documents
     if (validateDocuments()) isValid = false;
 
     // Validate facilities
@@ -602,7 +597,7 @@ export default function OwnerRegistrationScreen() {
 
   const staticMapUrl = (lat, lon) =>
     `https://staticmap.openstreetmap.de/staticmap.php?center=${lat},${lon}&zoom=14&size=640x240&markers=${lat},${lon},red-pushpin`;
-  // const router = useRouter();
+  const navigation = useNavigation();
   const zoomIn = () => {
     if (!mapRegion) return;
     setMapRegion({
@@ -717,14 +712,6 @@ export default function OwnerRegistrationScreen() {
 
       // Validate bank details
       if (form.stayType) {
-        // const bankNameError = validateBankName(form.bankName);
-        // const ifscError = validateIFSC(form.ifsc);
-        // const accountNoError = validateAccountNo(form.accountNo);
-        // if (bankNameError) newErrors.bankName = bankNameError;
-        // if (ifscError) newErrors.ifsc = ifscError;
-        // if (accountNoError) newErrors.accountNo = accountNoError;
-
-        // Validate documents
         if (!form.documents.property)
           newErrors.document_property = "Property document is required";
         if (
@@ -794,7 +781,7 @@ export default function OwnerRegistrationScreen() {
       ifsc: form.ifsc,
       accountNo: form.accountNo,
 
-      floors_info: step3Summary || "",
+      floors_info: JSON.stringify(form.floorsData || []),
     };
 
     Alert.alert("Confirm Registration", "Are you sure you want to submit?", [
@@ -850,7 +837,7 @@ export default function OwnerRegistrationScreen() {
             }
 
             const response = await fetch(
-              "http://192.168.1.19:8000/register/owner/",
+              "http://192.168.1.31:8000/api/register/owner/",
               {
                 method: "POST",
                 body: formData,
@@ -868,7 +855,7 @@ export default function OwnerRegistrationScreen() {
               Alert.alert("Success", "Registration successful!", [
                 {
                   text: "OK",
-                  onPress: () => navigation.navigate("OwnerLoginScreen"),
+                  onPress: () => navigation.replace("OwnerLoginScreen"),
                 },
               ]);
             } else {
@@ -1749,38 +1736,6 @@ export default function OwnerRegistrationScreen() {
                               </TouchableOpacity>
                             </View>
                           )}
-                          {/* {selectedPlaceName ? (
-                            <Text
-                              style={{
-                                color: "#374151",
-                                fontSize: 12,
-                                marginBottom: 6,
-                              }}
-                              numberOfLines={1}
-                            >
-                              Selected: {selectedPlaceName}
-                            </Text>
-                          ) : null}
-
-                          <Text style={styles.label}>BHK</Text>
-                          <Picker
-                            selectedValue={form.bhk}
-                            onValueChange={(v) => {
-                              setForm({ ...form, bhk: v });
-                            }}
-                            style={[
-                              styles.picker,
-                              errors.bhk && styles.inputError,
-                            ]}
-                          >
-                            <Picker.Item label="Select" value="" />
-                            <Picker.Item label="1 BHK" value="1" />
-                            <Picker.Item label="2 BHK" value="2" />
-                            <Picker.Item label="3 BHK" value="3" />
-                          </Picker>
-                          {errors.bhk ? (
-                            <Text style={styles.errorText}>{errors.bhk}</Text>
-                          ) : null} */}
 
                           <Text style={styles.label}>Tenant Type</Text>
                           <Picker
@@ -2010,17 +1965,7 @@ export default function OwnerRegistrationScreen() {
                               {errors.location}
                             </Text>
                           ) : null}
-                          {/* <TouchableOpacity
-                            style={[
-                              styles.mapActionBtn,
-                              { marginTop: 6, alignSelf: "flex-start" },
-                            ]}
-                            onPress={openInGoogleMaps}
-                          > */}
-                          {/* <Text style={styles.mapActionText}>
-                              Open in Google Maps
-                            </Text>
-                          </TouchableOpacity> */}
+
                           {Platform.OS === "android" &&
                             locationSuggestions.length > 0 && (
                               <View style={{ marginBottom: 10 }}>
@@ -2699,6 +2644,663 @@ export default function OwnerRegistrationScreen() {
 }
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
+
+function Step3({ form, onUpdateFloors }) {
+  const stayType = form?.stayType || "";
+  const [floorInput, setFloorInput] = useState("");
+  const [roomInput, setRoomInput] = useState("");
+  const [floors, setFloors] = useState([]);
+  const [buildingOpen, setBuildingOpen] = useState(false);
+  const [selectedFloor, setSelectedFloor] = useState(null);
+  const [selectedRoom, setSelectedRoom] = useState(null);
+  const [roomsOpen, setRoomsOpen] = useState(false);
+
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedFloors, setSelectedFloors] = useState([]);
+  const [batchModalOpen, setBatchModalOpen] = useState(false);
+
+  const [roomSelectionMode, setRoomSelectionMode] = useState(false);
+  const [selectedRooms, setSelectedRooms] = useState([]);
+  const [roomBatchModalOpen, setRoomBatchModalOpen] = useState(false);
+
+  const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+  const roomSlideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+  useEffect(() => {
+    if (buildingOpen) {
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        useNativeDriver: true,
+        bounciness: 0,
+      }).start();
+    } else {
+      slideAnim.setValue(SCREEN_HEIGHT);
+    }
+  }, [buildingOpen, slideAnim]);
+
+  useEffect(() => {
+    if (roomsOpen) {
+      Animated.timing(roomSlideAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      roomSlideAnim.setValue(SCREEN_HEIGHT);
+    }
+  }, [roomsOpen, roomSlideAnim]);
+
+  useEffect(() => {
+    if (typeof onUpdateFloors === "function") {
+      onUpdateFloors(floors);
+    }
+  }, [floors, onUpdateFloors]);
+
+  const generateFloors = () => {
+    Keyboard.dismiss();
+    const num = parseInt(floorInput);
+    if (isNaN(num) || num <= 0) return;
+    const capped = Math.min(60, num);
+    if (capped !== num) {
+      Alert.alert("Limit", "Floors cannot exceed 60");
+    }
+    setFloors((prevFloors) => {
+      const currentCount = prevFloors.length;
+      if (capped === currentCount) return prevFloors;
+      if (capped > currentCount) {
+        const newFloors = Array.from(
+          { length: capped - currentCount },
+          (_, i) => ({
+            floorNo: currentCount + i + 1,
+            rooms: [],
+          }),
+        );
+        return [...prevFloors, ...newFloors];
+      }
+      return prevFloors.slice(0, capped);
+    });
+  };
+
+  const handleLongPress = (index) => {
+    setSelectionMode(true);
+    setSelectedFloors([index]);
+  };
+
+  const handlePress = (index) => {
+    if (selectionMode) {
+      if (selectedFloors.includes(index)) {
+        const next = selectedFloors.filter((i) => i !== index);
+        setSelectedFloors(next);
+        if (next.length === 0) setSelectionMode(false);
+      } else {
+        setSelectedFloors([...selectedFloors, index]);
+      }
+    } else {
+      setSelectedFloor(index);
+      setSelectedRoom(null);
+      setRoomsOpen(true);
+    }
+  };
+
+  const deleteSelectedFloors = () => {
+    Alert.alert("Delete Floors", `Delete ${selectedFloors.length} floor(s)?`, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => {
+          const remaining = floors.filter(
+            (_, idx) => !selectedFloors.includes(idx),
+          );
+          setFloors(remaining.map((f, i) => ({ ...f, floorNo: i + 1 })));
+          setSelectionMode(false);
+          setSelectedFloors([]);
+        },
+      },
+    ]);
+  };
+
+  const applyBatchRooms = () => {
+    const num = parseInt(roomInput);
+    if (isNaN(num) || num <= 0) return;
+    const capped = Math.min(30, num);
+    if (capped !== num) {
+      Alert.alert("Limit", "Rooms per floor cannot exceed 30");
+    }
+    const updated = [...floors];
+    selectedFloors.forEach((idx) => {
+      updated[idx].rooms = Array.from({ length: capped }, (_, i) => ({
+        roomNo: i + 1,
+        beds: 1,
+      }));
+    });
+    setFloors(updated);
+    setRoomInput("");
+    setBatchModalOpen(false);
+    setSelectionMode(false);
+    setSelectedFloors([]);
+  };
+
+  const addRoomManually = () => {
+    if (selectedFloor === null) return;
+    const updated = [...floors];
+    const currentRooms = updated[selectedFloor].rooms;
+    if (currentRooms.length >= 30) {
+      Alert.alert("Limit", "Rooms per floor cannot exceed 30");
+      return;
+    }
+    const newRoom = { roomNo: currentRooms.length + 1, beds: 1 };
+    updated[selectedFloor].rooms = [...currentRooms, newRoom];
+    setFloors(updated);
+  };
+
+  const handleRoomLongPress = (index) => {
+    setRoomSelectionMode(true);
+    setSelectedRooms([index]);
+  };
+
+  const handleRoomPress = (index) => {
+    if (roomSelectionMode) {
+      if (selectedRooms.includes(index)) {
+        const next = selectedRooms.filter((i) => i !== index);
+        setSelectedRooms(next);
+        if (next.length === 0) setRoomSelectionMode(false);
+      } else {
+        setSelectedRooms([...selectedRooms, index]);
+      }
+    } else {
+      setSelectedRoom(selectedRoom === index ? null : index);
+    }
+  };
+
+  const deleteSelectedRooms = () => {
+    Alert.alert("Delete Rooms", `Delete ${selectedRooms.length} room(s)?`, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => {
+          const updated = [...floors];
+          const remainingRooms = updated[selectedFloor].rooms.filter(
+            (_, idx) => !selectedRooms.includes(idx),
+          );
+          updated[selectedFloor].rooms = remainingRooms.map((r, i) => ({
+            ...r,
+            roomNo: i + 1,
+          }));
+          setFloors(updated);
+          setRoomSelectionMode(false);
+          setSelectedRooms([]);
+        },
+      },
+    ]);
+  };
+
+  const applyBatchSharing = () => {
+    const num = parseInt(roomInput);
+    if (isNaN(num) || num <= 0) return;
+    const updated = [...floors];
+    selectedRooms.forEach((idx) => {
+      updated[selectedFloor].rooms[idx].beds = Math.min(8, num);
+    });
+    setFloors(updated);
+    setRoomInput("");
+    setRoomBatchModalOpen(false);
+    setRoomSelectionMode(false);
+    setSelectedRooms([]);
+  };
+
+  const updateBeds = (change) => {
+    const updated = [...floors];
+    const room = updated[selectedFloor].rooms[selectedRoom];
+    room.beds = Math.max(1, Math.min(8, room.beds + change));
+    setFloors(updated);
+  };
+
+  const generateRoomsForFloor = () => {
+    const num = parseInt(roomInput);
+    if (isNaN(num) || num <= 0 || selectedFloor === null) return;
+    const capped = Math.min(30, num);
+    if (capped !== num) {
+      Alert.alert("Limit", "Rooms per floor cannot exceed 30");
+    }
+    const updated = [...floors];
+    updated[selectedFloor].rooms = Array.from({ length: capped }, (_, i) => ({
+      roomNo: i + 1,
+      beds: 1,
+    }));
+    setFloors(updated);
+    setRoomInput("");
+  };
+
+  const totalRoomsCount = floors.reduce((acc, f) => acc + f.rooms.length, 0);
+  const currentFloorRooms =
+    selectedFloor !== null ? floors[selectedFloor]?.rooms.length : 0;
+  const currentFloorBeds =
+    selectedFloor !== null
+      ? floors[selectedFloor]?.rooms.reduce((sum, r) => sum + r.beds, 0)
+      : 0;
+
+  return stayType === "apartment" ? (
+    <ApartmentLayout onUpdateFloors={onUpdateFloors} />
+  ) : stayType === "commercial" ? (
+    <CommercialLayout onUpdateFloors={onUpdateFloors} />
+  ) : (
+    <View style={step3Styles.container}>
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={step3Styles.row}>
+          <TextInput
+            placeholder="No. of Floors"
+            placeholderTextColor="#9CA3AF"
+            keyboardType="number-pad"
+            value={floorInput}
+            onChangeText={setFloorInput}
+            style={step3Styles.input}
+          />
+          <TouchableOpacity style={step3Styles.setBtn} onPress={generateFloors}>
+            <Text style={step3Styles.btnText}>
+              {floors.length ? "Update" : "Set"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {floors.length > 0 ? (
+          <View style={step3Styles.centerContainer}>
+            <TouchableOpacity
+              style={step3Styles.buildingBox}
+              onPress={() => setBuildingOpen(true)}
+              activeOpacity={0.9}
+            >
+              <View style={step3Styles.iconCircle}>
+                <Ionicons name="business" size={50} color={LIGHT_PURPLE} />
+              </View>
+              <Text style={step3Styles.buildingText}>Configure Building</Text>
+              <Text style={step3Styles.buildingSubText}>
+                {floors.length} Floors • {totalRoomsCount} Rooms total
+              </Text>
+              <View style={step3Styles.manageBadge}>
+                <Text style={step3Styles.manageText}>Open Layout Editor</Text>
+                <Ionicons
+                  name="chevron-forward"
+                  size={16}
+                  color={LIGHT_PURPLE}
+                />
+              </View>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={step3Styles.emptyState}>
+            <Ionicons name="business-outline" size={60} color={LIGHT_PURPLE} />
+            <Text style={step3Styles.emptyText}>
+              Enter floor count to start building
+            </Text>
+          </View>
+        )}
+      </ScrollView>
+
+      <Modal visible={buildingOpen} transparent animationType="fade">
+        <View style={step3Styles.overlay}>
+          <Animated.View
+            style={[
+              step3Styles.modalBox,
+              { transform: [{ translateY: slideAnim }] },
+            ]}
+          >
+            <View style={step3Styles.modalHeader}>
+              <Text style={step3Styles.sectionTitle}>
+                {selectionMode
+                  ? `${selectedFloors.length} Selected`
+                  : "Select a Floor"}
+              </Text>
+              {selectionMode && (
+                <TouchableOpacity
+                  onPress={() => {
+                    setSelectionMode(false);
+                    setSelectedFloors([]);
+                  }}
+                >
+                  <Text style={{ color: "#EF4444", fontWeight: "bold" }}>
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            <ScrollView contentContainerStyle={step3Styles.gridContainer}>
+              {floors.map((floor, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={[
+                    step3Styles.gridCard,
+                    selectedFloors.includes(index) && step3Styles.selectedCard,
+                  ]}
+                  onLongPress={() => handleLongPress(index)}
+                  onPress={() => handlePress(index)}
+                >
+                  {selectionMode && (
+                    <View
+                      style={[
+                        step3Styles.checkCircle,
+                        selectedFloors.includes(index) &&
+                          step3Styles.checkCircleActive,
+                      ]}
+                    >
+                      {selectedFloors.includes(index) && (
+                        <Ionicons name="checkmark" size={12} color="white" />
+                      )}
+                    </View>
+                  )}
+                  <Text
+                    style={[
+                      step3Styles.gridCardTitle,
+                      selectedFloors.includes(index) && { color: "#7209B7" },
+                    ]}
+                  >
+                    Floor {floor.floorNo}
+                  </Text>
+                  <Text style={step3Styles.cardSub}>
+                    {floor.rooms.length} Rooms
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            {selectionMode ? (
+              <View style={step3Styles.selectionFooter}>
+                <TouchableOpacity
+                  style={step3Styles.smallActionBtn}
+                  onPress={() => setSelectedFloors(floors.map((_, i) => i))}
+                >
+                  <Text style={step3Styles.smallBtnText}>All</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    step3Styles.smallActionBtn,
+                    { backgroundColor: "#FEE2E2" },
+                  ]}
+                  onPress={deleteSelectedFloors}
+                >
+                  <Text
+                    style={[step3Styles.smallBtnText, { color: "#EF4444" }]}
+                  >
+                    Delete
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={step3Styles.primaryBtn}
+                  onPress={() => setBatchModalOpen(true)}
+                >
+                  <Text style={step3Styles.btnText}>Apply Rooms</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={step3Styles.closeBtn}
+                onPress={() => setBuildingOpen(false)}
+              >
+                <Text style={step3Styles.btnText}>Done</Text>
+              </TouchableOpacity>
+            )}
+
+            {roomsOpen && selectedFloor !== null && (
+              <Animated.View
+                style={[
+                  step3Styles.roomsScreen,
+                  { transform: [{ translateY: roomSlideAnim }] },
+                ]}
+              >
+                <View style={step3Styles.roomsHeader}>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setRoomsOpen(false);
+                      setRoomSelectionMode(false);
+                      setSelectedRooms([]);
+                    }}
+                  >
+                    <Ionicons
+                      name="arrow-back"
+                      size={28}
+                      color={LIGHT_PURPLE}
+                    />
+                  </TouchableOpacity>
+                  <Text style={step3Styles.headerTitle}>
+                    {roomSelectionMode
+                      ? `${selectedRooms.length} Selected`
+                      : `Floor ${floors[selectedFloor].floorNo}`}
+                  </Text>
+                  {roomSelectionMode && (
+                    <TouchableOpacity
+                      onPress={() => {
+                        setRoomSelectionMode(false);
+                        setSelectedRooms([]);
+                      }}
+                    >
+                      <Text style={{ color: "#EF4444", fontWeight: "bold" }}>
+                        Cancel
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                  {!roomSelectionMode && <View style={{ width: 28 }} />}
+                </View>
+
+                <View style={step3Styles.row}>
+                  <TextInput
+                    placeholder="Rooms count"
+                    placeholderTextColor="#9CA3AF"
+                    keyboardType="number-pad"
+                    value={roomInput}
+                    onChangeText={setRoomInput}
+                    style={step3Styles.input}
+                  />
+                  <TouchableOpacity
+                    style={step3Styles.setBtn}
+                    onPress={generateRoomsForFloor}
+                  >
+                    <Text style={step3Styles.btnText}>Set</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={step3Styles.setBtn}
+                    onPress={addRoomManually}
+                  >
+                    <Ionicons name="add" size={18} color={WHITE} />
+                    <Text style={step3Styles.btnText}> Add</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View style={step3Styles.counterBox}>
+                  <Text style={step3Styles.counterText}>
+                    Rooms: {currentFloorRooms} | Total Beds: {currentFloorBeds}
+                  </Text>
+                </View>
+
+                <ScrollView contentContainerStyle={step3Styles.gridContainer}>
+                  {floors[selectedFloor].rooms.map((room, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={[
+                        step3Styles.gridCard,
+                        (selectedRoom === index ||
+                          selectedRooms.includes(index)) &&
+                          step3Styles.selectedCard,
+                      ]}
+                      onLongPress={() => handleRoomLongPress(index)}
+                      onPress={() => handleRoomPress(index)}
+                    >
+                      {roomSelectionMode && (
+                        <View
+                          style={[
+                            step3Styles.checkCircle,
+                            selectedRooms.includes(index) &&
+                              step3Styles.checkCircleActive,
+                          ]}
+                        >
+                          {selectedRooms.includes(index) && (
+                            <Ionicons
+                              name="checkmark"
+                              size={12}
+                              color="white"
+                            />
+                          )}
+                        </View>
+                      )}
+                      <Text
+                        style={[
+                          step3Styles.gridCardTitle,
+                          (selectedRoom === index ||
+                            selectedRooms.includes(index)) && {
+                            color: "#2F80ED",
+                          },
+                        ]}
+                      >
+                        {floors[selectedFloor].floorNo * 100 + room.roomNo}
+                      </Text>
+                      <Text style={step3Styles.cardSub}>
+                        {room.beds} Sharing
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+
+                {roomSelectionMode ? (
+                  <View style={step3Styles.selectionFooter}>
+                    <TouchableOpacity
+                      style={step3Styles.smallActionBtn}
+                      onPress={() =>
+                        setSelectedRooms(
+                          floors[selectedFloor].rooms.map((_, i) => i),
+                        )
+                      }
+                    >
+                      <Text style={step3Styles.smallBtnText}>All</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[
+                        step3Styles.smallActionBtn,
+                        { backgroundColor: "#FEE2E2" },
+                      ]}
+                      onPress={deleteSelectedRooms}
+                    >
+                      <Text
+                        style={[step3Styles.smallBtnText, { color: "#EF4444" }]}
+                      >
+                        Delete
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={step3Styles.primaryBtn}
+                      onPress={() => setRoomBatchModalOpen(true)}
+                    >
+                      <Text style={step3Styles.btnText}>Apply Sharing</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : selectedRoom !== null ? (
+                  <View style={step3Styles.sharingBox}>
+                    <Text style={step3Styles.sharingTitle}>
+                      Beds in Room{" "}
+                      {floors[selectedFloor].floorNo * 100 +
+                        floors[selectedFloor].rooms[selectedRoom].roomNo}
+                    </Text>
+                    <View style={step3Styles.sharingRow}>
+                      <TouchableOpacity onPress={() => updateBeds(-1)}>
+                        <Ionicons
+                          name="remove-circle"
+                          size={48}
+                          color="#EF4444"
+                        />
+                      </TouchableOpacity>
+                      <Text style={step3Styles.bedCount}>
+                        {floors[selectedFloor].rooms[selectedRoom].beds}
+                      </Text>
+                      <TouchableOpacity onPress={() => updateBeds(1)}>
+                        <Ionicons
+                          name="add-circle"
+                          size={48}
+                          color={LIGHT_PURPLE}
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    style={step3Styles.closeBtn}
+                    onPress={() => setRoomsOpen(false)}
+                  >
+                    <Text style={step3Styles.btnText}>Done</Text>
+                  </TouchableOpacity>
+                )}
+
+                {roomBatchModalOpen && (
+                  <View style={step3Styles.batchPopup}>
+                    <Text style={step3Styles.popupTitle}>
+                      Apply Sharing to {selectedRooms.length} Rooms
+                    </Text>
+                    <TextInput
+                      placeholder="No."
+                      placeholderTextColor="#9CA3AF"
+                      keyboardType="number-pad"
+                      value={roomInput}
+                      onChangeText={setRoomInput}
+                      autoFocus
+                      style={step3Styles.batchInput}
+                    />
+                    <View style={step3Styles.row}>
+                      <TouchableOpacity
+                        style={step3Styles.secondaryBtn}
+                        onPress={() => setRoomBatchModalOpen(false)}
+                      >
+                        <Text style={step3Styles.secondaryBtnText}>Cancel</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[step3Styles.primaryBtn, { marginLeft: 10 }]}
+                        onPress={applyBatchSharing}
+                      >
+                        <Text style={step3Styles.btnText}>Apply</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
+              </Animated.View>
+            )}
+
+            {batchModalOpen && (
+              <View style={step3Styles.batchPopup}>
+                <Text style={step3Styles.popupTitle}>
+                  Set Rooms for {selectedFloors.length} Floors
+                </Text>
+                <TextInput
+                  placeholder="Rooms per floor"
+                  placeholderTextColor="#9CA3AF"
+                  keyboardType="number-pad"
+                  value={roomInput}
+                  onChangeText={setRoomInput}
+                  autoFocus
+                  style={step3Styles.batchInput}
+                />
+                <View style={step3Styles.row}>
+                  <TouchableOpacity
+                    style={step3Styles.secondaryBtn}
+                    onPress={() => setBatchModalOpen(false)}
+                  >
+                    <Text style={step3Styles.secondaryBtnText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[step3Styles.primaryBtn, { marginLeft: 10 }]}
+                    onPress={applyBatchRooms}
+                  >
+                    <Text style={step3Styles.btnText}>Apply</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          </Animated.View>
+        </View>
+      </Modal>
+    </View>
+  );
+}
 
 function ApartmentLayout({ onUpdateFloors }) {
   const [floorInput, setFloorInput] = useState("");

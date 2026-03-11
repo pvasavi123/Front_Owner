@@ -849,17 +849,6 @@ function PropertyDetailsScreen({ property, onBack }) {
     "Central AC": "air-conditioner",
   };
 
-  const ruleIcons = {
-    "No Smoking": "smoking-off",
-    "No Pets": "paw-off",
-    "No Parties": "party-popper", // or "account-group-outline"
-    "Visitors Allowed": "account-multiple-check",
-    "Quiet Hours": "volume-off",
-    "Late Entry": "clock-outline",
-    "Security Deposit": "cash-lock",
-    "Notice Period": "calendar-clock",
-  };
-
   const reviews = [
     {
       id: "1",
@@ -1062,9 +1051,8 @@ fetch("https://your-api.com/bookings", {
 
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images, // ✅ Safe for SDK 54
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.3,
+        allowsEditing: false,
+        quality: 0.1,
       });
 
       if (!result.canceled && result.assets?.length > 0) {
@@ -1075,8 +1063,8 @@ fetch("https://your-api.com/bookings", {
 
         console.log("Image size:", sizeInKb);
 
-        if (sizeInKb > 500) {
-          alert("Image must be under 500KB");
+        if (sizeInKb > 100) {
+          alert("Image must be under 100KB");
           return;
         }
 
@@ -1212,12 +1200,12 @@ fetch("https://your-api.com/bookings", {
             </ScrollView>
           </View> */}
 
-          <Text style={styles.sectionTitle}>About this place</Text>
+          {/* <Text style={styles.sectionTitle}>About this place</Text>
           <Text style={styles.descriptionText}>
             This premium {property.type.toLowerCase()} offers a comfortable stay
             with all modern utilities. Located in a prime area with easy access
             to public transport and local markets.
-          </Text>
+          </Text> */}
 
           <Text style={styles.sectionTitle}>Facilities</Text>
           <View style={styles.amenitiesGrid}>
@@ -1354,26 +1342,6 @@ fetch("https://your-api.com/bookings", {
               </TouchableOpacity>
             ))}
           </ScrollView>
-
-          <Text style={styles.sectionTitle}>Property Rules & Policy</Text>
-          <View style={styles.rulesContainer}>
-            {property.rules?.map((rule, index) => (
-              <View key={index} style={styles.ruleRow}>
-                <View style={styles.ruleIconCircle}>
-                  <MaterialCommunityIcons
-                    name={ruleIcons[rule] || "information-outline"}
-                    size={18}
-                    color={rule.includes("No") ? COLORS.ERROR : COLORS.PRIMARY}
-                  />
-                </View>
-                <Text style={styles.ruleText}>{rule}</Text>
-              </View>
-            )) || (
-              <Text style={styles.descriptionText}>
-                No specific rules listed.
-              </Text>
-            )}
-          </View>
         </View>
       </ScrollView>
 
@@ -1433,7 +1401,7 @@ fetch("https://your-api.com/bookings", {
                 { textAlign: "left", marginBottom: 5 },
               ]}
             >
-              Add a photo (Max 10KB)
+              Add a photo (Max 100KB)
             </Text>
             <View style={styles.uploadContainer}>
               <TouchableOpacity
@@ -1532,43 +1500,6 @@ fetch("https://your-api.com/bookings", {
               />
             )}
 
-            {/* CHECK-OUT DATE */}
-            {Platform.OS === "web" ? (
-              <TextInput
-                style={styles.input}
-                placeholder="Check-out (DD/MM/YYYY)"
-                value={checkOut}
-                onChangeText={setCheckOut}
-              />
-            ) : (
-              <TouchableOpacity
-                style={styles.input}
-                onPress={() => setShowCheckOutPicker(true)}
-              >
-                <Text>{checkOut || "Select Check-out Date (Optional)"}</Text>
-              </TouchableOpacity>
-            )}
-
-            {showCheckOutPicker && (
-              <DateTimePicker
-                value={new Date()}
-                mode="date"
-                display="default"
-                onChange={(event, date) => {
-                  setShowCheckOutPicker(false);
-                  if (date) {
-                    const formatted =
-                      date.getDate().toString().padStart(2, "0") +
-                      "/" +
-                      (date.getMonth() + 1).toString().padStart(2, "0") +
-                      "/" +
-                      date.getFullYear();
-                    setCheckOut(formatted);
-                  }
-                }}
-              />
-            )}
-
             {/* HOSTEL SPECIFIC */}
             {property.type === "Hostel" && (
               <>
@@ -1582,7 +1513,6 @@ fetch("https://your-api.com/bookings", {
               </>
             )}
 
-            {/* APARTMENT */}
             {/* APARTMENT */}
             {property.type === "Apartment" && (
               <>

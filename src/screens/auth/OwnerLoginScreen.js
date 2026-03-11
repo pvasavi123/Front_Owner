@@ -52,35 +52,40 @@ export default function OwnerLoginScreen({ navigation }) {
   };
 
   // ✅ LOGIN API FUNCTION
-  const handleLogin = async () => {
-    if (!validate()) return;
+  // const handleLogin = async () => {
+  //   if (!validate()) return;
 
-    try {
-      const response = await fetch("http://192.168.1.19:8000/api/login/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: email.trim(),
-          password: password.trim(),
-        }),
-      });
+  //   try {
+  //     const response = await fetch("http://192.168.1.19:8000/api/login/", {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({
+  //         email: email.trim(),
+  //         password: password.trim(),
+  //       }),
+  //     });
 
-      const data = await response.json();
+  //     const data = await response.json();
 
-      console.log("LOGIN RESPONSE:", data);
+  //     console.log("LOGIN RESPONSE:", data);
 
-      if (response.ok) {
-        alert("Login Successful");
-        navigateTo("OwnerDashboard");
-      } else {
-        alert(data.error || "Login failed");
-      }
-    } catch (error) {
-      console.log("LOGIN ERROR:", error);
-      alert("Server error");
-    }
+  //     if (response.ok) {
+  //       alert("Login Successful");
+  //       navigation.navigate("OwnerNavigation");
+  //     } else {
+  //       alert(data.error || "Login failed");
+
+  //     }
+  //   } catch (error) {
+  //     console.log("LOGIN ERROR:", error);
+  //     alert("Server error");
+
+  //   }
+  // };
+  const handleLogin = () => {
+    navigation.navigate("OwnerNavigation");
   };
 
   return (

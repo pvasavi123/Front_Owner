@@ -136,7 +136,7 @@ export default function App() {
         {showSplash ? (
           <SplashScreen />
         ) : showHome ? (
-          <HomeScreen />
+          <RoleScreen />
         ) : (
           <View style={{ flex: 1 }}>
             <StatusBar barStyle="dark-content" />
@@ -322,7 +322,7 @@ export default function App() {
 }
 
 /* ===== HomeScreen Code (from your second code) ===== */
-function HomeScreen() {
+function RoleScreen() {
   const navigation = useNavigation();
   const line1Opacity = useSharedValue(0);
   const line2Opacity = useSharedValue(0);
@@ -526,7 +526,7 @@ function HomeScreen() {
 
         <SelectCard
           title="Continue as Home Seeker"
-          onPress={() => navigation.navigate("LoginScreen")}
+          onPress={() => navigation.navigate("TenantLoginScreen")}
         />
 
         <Text

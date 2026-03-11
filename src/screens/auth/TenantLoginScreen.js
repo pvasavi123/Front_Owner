@@ -18,7 +18,7 @@ const LIGHT_PURPLE = COLORS.PRIMARY_LIGHT;
 const GRAY = COLORS.TEXT_SECONDARY;
 const LIGHT_GRAY = COLORS.CARD;
 
-export default function LoginScreen({ navigation }) {
+export default function TenantLoginScreen({ navigation }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState({});
@@ -60,7 +60,7 @@ export default function LoginScreen({ navigation }) {
     if (!validateForm()) return;
 
     try {
-      const response = await fetch("http://192.168.1.19:8000/tenent/login/", {
+      const response = await fetch("http://192.168.1.31:8000/tenent/login/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
