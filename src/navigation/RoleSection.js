@@ -413,7 +413,7 @@ function RoleSection() {
 
   return (
     <LinearGradient
-      colors={[THEME.PRIMARY, THEME.PRIMARY_LIGHT]}
+      colors={["#4A00E0", "#8E2DE2", "#6A5ACD"]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={{ flex: 1 }}

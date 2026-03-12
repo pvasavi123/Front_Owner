@@ -76,12 +76,10 @@ export default function OwnerLoginScreen({ navigation }) {
   //       navigation.navigate("OwnerNavigation");
   //     } else {
   //       alert(data.error || "Login failed");
-
   //     }
   //   } catch (error) {
   //     console.log("LOGIN ERROR:", error);
   //     alert("Server error");
-
   //   }
   // };
   const handleLogin = () => {
